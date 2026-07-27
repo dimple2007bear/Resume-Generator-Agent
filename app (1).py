@@ -57,7 +57,7 @@ def prompt_generator():
   file_name='prompt.txt'
   with open(file_name,'w') as f:
     f.write(file_name)
-  prompt_generator()
+prompt_generator()
 
 # final_agent
 # tool 2
