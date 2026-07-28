@@ -114,7 +114,7 @@ if FILE is not None:
       save_path = f"{base_name}.jpg"
 
       image.save(save_path,"JPEG")
-      st.sidebar.success(f" Image Successfully saved as '{save_path}'
+      st.sidebar.success(f" Image Successfully saved as '{save_path}'"
       
    except Exception as e:
       st.error(f"Error processing image:{e}")
