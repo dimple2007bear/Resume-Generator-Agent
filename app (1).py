@@ -10,18 +10,23 @@ import pytesseract as pyt
 import numpy as np
 from langchain.messages import SystemMessage, HumanMessage
 from langchain.agents import create_agent
+from PIL import Image
 import tempfile
 
 # =========================FRONTEND==================
-st.title("AI RESUME GENERATOR")
-
+st.title("AI RESUME MAKER & JOB APPLY AGENT")
+st.image("https://www.madrona.com/wp-content/uploads/2024/05/AI-Agent-infrastructure-blog-post-ChatGPT.webp"
+         width=400)
+# api keys
 GOOGLE_API_KEY = st.sidebar.text_input("Google Api Key", type = 'password')
 GROQ_API_KEY = st.sidebar.text_input("GROQ Api Key", type = 'password')
 TAVILY_API_KEY = st.sidebar.text_input("TAVILY Api Key", type = 'password')
 
-if not GOOGLE_API_KEY:
-  st.warning("Provide Google API key")
-
+if not (GOOGLE) and not(GROQ) and not (TAVILY):
+  st.sidebar.warning("pass api keys")
+  st.stop()
+else:
+  st.success("API KEYS LOADED")
 
 # ============= MODEL and AGENT CODE====================
 # tool 1
@@ -77,7 +82,6 @@ def prompt_generator():
 
 prompt_generator()
 
-
 # Final_Agent
 #Tool 2
 def prompt_reader():
@@ -85,14 +89,37 @@ def prompt_reader():
     prompt = f.read()
   return prompt
 
-
-
 prompt = """I want complete Professional
 Resume with Dynamic Design using Advanced CSS and JS
 and must show user input details
 System instructions: Only Give HTML code as output"""
 
 final_prompt = prompt + prompt_reader()
+
+#============IMAGE UPLOAD===========
+#===================UPLOAD IMAGE==============
+FILE= st.siderbar.file_uploader(
+   "Choose an image file"
+   type=["jpg","jpeg","png","webp"]
+)
+if FILE is not None:
+   try:
+      image=Image.open(FILE)
+      st.sidebar.image(image,
+                        caption="Uploaded Image",
+                        use_contained_width=True)
+
+      if image.mode in ("RGBA","P"):
+           image = image.convert("RGB")
+
+      base_name = os.path.splitext(FILE.name)[0]
+      save_path = f"{base_name}.jpg"
+
+      image.save(save_path,"JPEG")
+      st.sidebar.success(f" Image Successfully saved as '{save_path}'
+      
+   except Exception as e:
+      st.error(f"Error processing image:{e}")
 
 profile_url = "https://s7d1.scene7.com/is/image/wbcollab/India_PM_Narendra_Modi-2?qlt=75&resMode=sharp2"
 
