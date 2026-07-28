@@ -128,11 +128,6 @@ profile_url = "https://s7d1.scene7.com/is/image/wbcollab/India_PM_Narendra_Modi-
 
 user_info = st.text_area("Give your information: ")
 
-if user_photo is not None:
-  # Create a temporary file
-  with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
-    tmp.write(user_photo.getvalue())
-    tmp_path = tmp.name
 
 user_query = f"""user details:given below:
 resume info {user_info}
