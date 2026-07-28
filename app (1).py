@@ -105,9 +105,7 @@ FILE= st.siderbar.file_uploader(
 if FILE is not None:
    try:
       image=Image.open(FILE)
-      st.sidebar.image(image,
-                        caption="Uploaded Image",
-                        use_contained_width=True)
+      st.sidebar.image(image caption="Uploaded Image",use_contained_width=True)
 
       if image.mode in ("RGBA","P"):
            image = image.convert("RGB")
