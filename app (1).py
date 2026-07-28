@@ -15,7 +15,7 @@ import tempfile
 
 # =========================FRONTEND==================
 st.title("AI RESUME MAKER & JOB APPLY AGENT")
-st.image("https://www.madrona.com/wp-content/uploads/2024/05/AI-Agent-infrastructure-blog-post-ChatGPT.webp"
+st.image("https://www.madrona.com/wp-content/uploads/2024/05/AI-Agent-infrastructure-blog-post-ChatGPT.webp",
          width=400)
 # api keys
 GOOGLE_API_KEY = st.sidebar.text_input("Google Api Key", type = 'password')
