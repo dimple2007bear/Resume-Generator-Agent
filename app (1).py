@@ -101,7 +101,7 @@ final_prompt = prompt + prompt_reader()
 
 #============IMAGE UPLOAD===========
 #===================UPLOAD IMAGE==============
-FILE= st.siderbar.file_uploader(
+FILE= st.sidebar.file_uploader(
    "Choose an image file",
    type=["jpg","jpeg","png","webp"]
 )
