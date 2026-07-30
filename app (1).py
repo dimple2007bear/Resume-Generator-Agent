@@ -39,19 +39,19 @@ def search_latest_news_jobs(query):
   using tavily"""
 
   from tavily import TavilyClient
-  client = TavilyClient(api_key = TAVILY)
+  client = TavilyClient(api_key = TAVILY_API_KEY)
   return client.search(query)
 
 
 # Step 4: Model and Agent creation
 model1 = ChatGoogleGenerativeAI(
     model = "gemini-3.5-flash-lite",
-    google_api_key = GOOGLE
+    google_api_key = GOOGLE_API_KEY
 )
 
 model2 = ChatGroq(
     model = "qwen/qwen3.6-27b",
-    groq_api_key = GROQ
+    groq_api_key = GROQ_API_KEY
 )
 
 
