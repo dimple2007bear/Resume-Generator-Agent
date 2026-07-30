@@ -20,11 +20,11 @@ st.title("AI RESUME MAKER & JOB APPLY AGENT")
 st.image("https://www.madrona.com/wp-content/uploads/2024/05/AI-Agent-infrastructure-blog-post-ChatGPT.webp",
          width=400)
 # api keys
-GOOGLE_API_KEY= st.sidebar.text_input("Google", type = 'password')
-GROQ_API_KEY = st.sidebar.text_input("GROQ ", type = 'password')
-TAVILY_API_KEY = st.sidebar.text_input("TAVILY ", type = 'password')
+GOOGLE= st.sidebar.text_input("Google", type = 'password')
+GROQ= st.sidebar.text_input("GROQ ", type = 'password')
+TAVILY= st.sidebar.text_input("TAVILY ", type = 'password')
 
-if not (GOOGLE_API_KEY) and not(GROQ_API_KEY) and not (TAVILY_API_KEY):
+if not (GOOGLE) and not(GROQ) and not (TAVILY):
   st.sidebar.warning("pass api keys")
   st.stop()
 else:
@@ -39,19 +39,19 @@ def search_latest_news_jobs(query):
   using tavily"""
 
   from tavily import TavilyClient
-  client = TavilyClient(api_key = TAVILY_API_KEY)
+  client = TavilyClient(api_key = TAVILY)
   return client.search(query)
 
 
 # Step 4: Model and Agent creation
 model1 = ChatGoogleGenerativeAI(
     model = "gemini-3.5-flash-lite",
-    google_api_key = GOOGLE_API_KEY
+    google_api_key = GOOGLE
 )
 
 model2 = ChatGroq(
     model = "qwen/qwen3.6-27b",
-    groq_api_key = GROQ_API_KEY
+    groq_api_key = GROQ
 )
 
 
