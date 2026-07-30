@@ -20,11 +20,11 @@ st.title("AI RESUME MAKER & JOB APPLY AGENT")
 st.image("https://www.madrona.com/wp-content/uploads/2024/05/AI-Agent-infrastructure-blog-post-ChatGPT.webp",
          width=400)
 # api keys
-GOOGLE= st.sidebar.text_input("Google", type = 'password')
-GROQ = st.sidebar.text_input("GROQ ", type = 'password')
-TAVILY = st.sidebar.text_input("TAVILY ", type = 'password')
+GOOGLE_API_KEY= st.sidebar.text_input("Google", type = 'password')
+GROQ_API_KEY = st.sidebar.text_input("GROQ ", type = 'password')
+TAVILY_API_KEY = st.sidebar.text_input("TAVILY ", type = 'password')
 
-if not (GOOGLE) and not(GROQ) and not (TAVILY):
+if not (GOOGLE_API_KEY) and not(GROQ_API_KEY) and not (TAVILY_API_KEY):
   st.sidebar.warning("pass api keys")
   st.stop()
 else:
