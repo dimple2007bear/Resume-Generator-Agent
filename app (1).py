@@ -1,185 +1,175 @@
-# st.markdown("""## user can create or download resume based on high ATS score """)
-# =============================== AGENT CODE ===========================================
-import os
-import base64
 import streamlit as st
-from langchain.agents import create_agent
+import os
+import time
+import langchain
+from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from tavily import TavilyClient
+import pytesseract as pyt
+import numpy as np
+from langchain.messages import SystemMessage, HumanMessage
+from langchain.agents import create_agent
 from PIL import Image
+import base64
+import tempfile
+st.set_page_config(layout="wide")
 
+# =========================FRONTEND==================
 st.title("AI RESUME MAKER & JOB APPLY AGENT")
-st.image(
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrGg1PzVvppycJgP2W8V_0eYflg5xcVNxXXYn3OlOGUP6JDnu9O_SZnks&s=10",
-    width=300,
+st.image("https://www.madrona.com/wp-content/uploads/2024/05/AI-Agent-infrastructure-blog-post-ChatGPT.webp",
+         width=400)
+# api keys
+GOOGLE_API_KEY = st.sidebar.text_input("Google Api Key", type = 'password')
+GROQ_API_KEY = st.sidebar.text_input("GROQ Api Key", type = 'password')
+TAVILY_API_KEY = st.sidebar.text_input("TAVILY Api Key", type = 'password')
+
+if not (GOOGLE_API_KEY) and not(GROQ) and not (TAVILY):
+  st.sidebar.warning("pass api keys")
+  st.stop()
+else:
+  st.success("API KEYS LOADED")
+
+# ============= MODEL and AGENT CODE====================
+# tool 1
+def search_latest_news_jobs(query):
+  """This function helps to get
+  latest news or latest jobs
+  related to user given query
+  using tavily"""
+
+  from tavily import TavilyClient
+  client = TavilyClient(api_key = TAVILY_API_KEY)
+  return client.search(query)
+
+
+# Step 4: Model and Agent creation
+model1 = ChatGoogleGenerativeAI(
+    model = "gemini-3.5-flash-lite",
+    google_api_key = GOOGLE_API_KEY
 )
 
-# ------------------------- API KEYS -------------------------
-GOOGLE = st.sidebar.text_input("GEMINI", type="password")
-GROQ = st.sidebar.text_input("GROQ", type="password")
-TAVILY = st.sidebar.text_input("TAVILY", type="password")
-
-# require ALL keys, not "all empty" — original bug let the app continue with blank keys
-if not GOOGLE or not TAVILY:
-    st.sidebar.warning("Please enter your API keys (Gemini + Tavily required).")
-    st.stop()
-else:
-    st.sidebar.success("API keys loaded")
-
-# ------------------------- HELPERS -------------------------
-def extract_text(content):
-    """
-    Safely pull text out of a model response's .content, whatever shape it is.
-    ChatGoogleGenerativeAI usually returns a plain string.
-    Some providers/agents return a list of content blocks like [{'type': 'text', 'text': ...}].
-    The original code assumed the list-of-dicts shape unconditionally, which crashed
-    (e.g. response.content[-1]['text'] on a plain string just indexes the last character).
-    """
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        for item in reversed(content):
-            if isinstance(item, dict) and "text" in item:
-                return item["text"]
-            if isinstance(item, str):
-                return item
-        return str(content)
-    return str(content)
+model2 = ChatGroq(
+    model = "qwen/qwen3.6-27b",
+    api_key = GROQ_API_KEY
+)
 
 
-@st.cache_resource
-def get_model(api_key: str):
-    return ChatGoogleGenerativeAI(
-        google_api_key=api_key,
-        model="gemini-2.0-flash",  # "gemini-3.5-flash-lite" is not a real model name
-        temperature=1,
-    )
+#============Agent with tool==============
+agent = create_agent(
+    model = model1,   # can be model2 also,
+    tools = [search_latest_news_jobs]
+)
 
 
-def search_jobs(query: str):
-    """Find recent job listings / news for a given search query using Tavily."""
-    tavily_client = TavilyClient(api_key=TAVILY)
-    return tavily_client.search(query)
+# Let's Generate Prompt for Resume using model
 
+def prompt_generator():
+  prompt = """You are a helpful AI Resume
+  maker, I want you to use chain-of-thoughts
+  and give detailed prompt for model
+  where user want to generate resume
+  for fresher or experienced one
+  in HTML format, you have to give proper
+  set of instructions, and make sure to keep
+  design professional"""
 
-@st.cache_resource
-def get_agent(_model):
-    return create_agent(model=_model, tools=[search_jobs])
+  response = model1.invoke(prompt)
+  prompt_ans = response.content[-1]['text']
+  # print(prompt_ans)
 
+  file_name = 'prompt.txt'
+  with open(file_name, 'w') as f:
+    f.write(prompt_ans)
 
-model = get_model(GOOGLE)
-agent = get_agent(model)
+prompt_generator()
 
-# ------------------------- PROMPT GENERATION (cached, runs once) -------------------------
-PROMPT_FILE = "prompt.py"
+# Final_Agent
+#Tool 2
+def prompt_reader():
+  with open('prompt.txt','r') as f:
+    prompt = f.read()
+  return prompt
 
-
-def generate_base_prompt(model_):
-    """
-    Ask the model for a detailed HR-style prompt template used later to build resumes.
-    Cached in session_state so it doesn't re-run on every Streamlit rerun
-    (Streamlit reruns the whole script on every widget interaction).
-    """
-    if os.path.exists(PROMPT_FILE):
-        with open(PROMPT_FILE, "r") as f:
-            return f.read()
-
-    seed_prompt = """You are a senior HR resume analyzer. Your main task is to write a
-detailed prompt template for generating resumes (for students or experienced
-professionals) based on personal information they provide. The generated resume
-itself must be in HTML format — include that instruction in the prompt you write."""
-
-    try:
-        response = model_.invoke(seed_prompt)
-        text = extract_text(response.content)
-    except Exception as e:
-        st.error(f"Failed to generate base prompt: {e}")
-        st.stop()
-
-    with open(PROMPT_FILE, "w") as f:
-        f.write(text)
-    return text
-
-
-if "base_prompt" not in st.session_state:
-    st.session_state.base_prompt = generate_base_prompt(model)
-
-# ------------------------- IMAGE UPLOADER -------------------------
-FILE = st.sidebar.file_uploader("Choose an image file", type=["jpg", "jpeg", "png", "webp"])
-
-save_path = None
-if FILE is not None:
-    try:
-        image = Image.open(FILE)
-        st.sidebar.image(image, caption="Uploaded Image", use_container_width=True)
-
-        if image.mode in ("RGBA", "P"):
-            image = image.convert("RGB")
-
-        base_name = os.path.splitext(FILE.name)[0]
-        save_path = f"{base_name}.jpg"
-        image.save(save_path, "JPEG")
-        st.sidebar.success(f"🎉 Image successfully saved as `{save_path}`!")
-    except Exception as e:
-        st.error(f"Error processing image: {e}")
-
-# ------------------------- RESUME GENERATOR PROMPT -------------------------
-RESUME_INSTRUCTIONS = """You are a helpful AI assistant and job resume maker. Your task is
-to output an HTML-format resume with a proper, professional design using modern HTML/CSS/JS.
-Use a distinctive color scheme, showcase the candidate's skill set, use side margins/tables,
-and make heading text (e.g. "Professional Summary") use a gradient effect.
-
-IMPORTANT: wherever the profile photo goes in the resume, output exactly this tag and
-nothing else:
+prompt = """you are a helpful ai assistant  with a job resume maker , your task is to give html format resume,
+with a proper designing using recent html js css code , with professional degsine format , user will upload data and
+return html format resume make it diffrent colour scheme andthe resume should project m skill set  also make it look
+like professional , create side margins table also make the text gradient for heddings like professional summary
+IMPORTANT: wherever the profile photo goes in the resume, output exactly this tag and nothing else:
 <img src="PROFILE_IMAGE_PLACEHOLDER" style="width:100px;height:100px;border-radius:50%;">
-Do not draw or generate any other image tag or placeholder circle yourself."""
+do not draw or generate any other image tag or placeholder circle yourself"""
+final_prompt = prompt + prompt_reader()
 
-final_prompt = RESUME_INSTRUCTIONS + st.session_state.base_prompt
+#============IMAGE UPLOAD===========
+#===================UPLOAD IMAGE==============
+FILE= st.sidebar.file_uploader(
+   "Choose an image file",
+   type=["jpg","jpeg","png","webp"]
+)
+if FILE is not None:
+   try:
+      image=Image.open(FILE)
+      st.sidebar.image(image ,caption="Uploaded Image",use_contained_width=True)
 
-USER_INFO = st.text_area("ENTER YOUR INFORMATION")
+      if image.mode in ("RGBA","P"):
+           image = image.convert("RGB")
 
-user_details = f"""User details given below:
-resume info: {USER_INFO}
-DEFAULT IF NOT GIVEN: PYTHON DEVELOPER RESUME"""
+      base_name = os.path.splitext(FILE.name)[0]
+      save_path = f"{base_name}.jpg"
 
-query = final_prompt + user_details
+      image.save(save_path,"JPEG")
+      st.sidebar.success(f" Image Successfully saved as '{save_path}'")
+      
+   except Exception as e:
+      st.error(f"Error processing image:{e}")
 
-OPTIONS = ["DELHI", "NOIDA", "GURGAON/GURUGRAM", "KANPUR", "LUCKNOW", "BANGLORE", "PUNE"]
-LOCATION = st.sidebar.multiselect("SELECT LOCATION:", options=OPTIONS)
+profile_url = "https://s7d1.scene7.com/is/image/wbcollab/India_PM_Narendra_Modi-2?qlt=75&resMode=sharp2"
 
-JOB_PROFILE = ["PYTHON DEVELOPER", "GEN AI", "FULL-STACK DEVELOPER", "DATA ANALYST"]
-PROFILE = st.sidebar.multiselect("SELECT JOB ROLE", options=JOB_PROFILE)
+# Change this when required new resume by user, pass details
 
-job_prompt = f"""Based on {PROFILE} jobs in {LOCATION}, find the latest job postings using
-the search_jobs tool. Try the top 10 results or however many are available, and present
-them like a Naukri-style job board with job name, job description, salary, and apply link.
-Output must be HTML only, no markdown."""
+user_info = st.text_area("Give your information: ")
 
-# ------------------------- GENERATE -------------------------
+
+user_query = f"""user details:given below:
+resume info {user_info}
+DEFAULT IF NOT GIVEN  : PYTHON DEVELOPER RESUME"""
+    
+final_query = final_prompt + user_query
+
+OPTIONS = ["DELHI","NOIDA","GURGAON/GURUGRAM",
+          'KANPUR','LUCKNOW','BANGLORE','PUNE']
+           
+LOCATION = st.sidebar.multiselect('SELECT LOCATION: ',
+                                    options = OPTIONS )
+
+JOB_PROFILE = ["PYTHON DEVELOPER",'GEN AI',
+                'FULL-STACK DEVELOPER','DATA ANALYST']
+
+PROFILE = st.sidebar.multiselect("SELECT JOB ROLE",
+                options = JOB_PROFILE)
+
+
+job_prompt = f"""Based on {PROFILE} jobs in {LOCATION}, I 
+want latest job news in using tavily, 
+try top 10 search or whatever available
+and give result like naukri theme design with
+job name, job desc, salary,
+apply link and OUTPUT must be In HTML no markdowns"""
+
 if st.button("Generate Resume"):
-    with st.spinner("Running agent..."):
-        try:
-            response = agent.invoke({"messages": [{"role": "user", "content": query}]})
-            code = extract_text(response["messages"][-1].content)
-        except Exception as e:
-            st.error(f"Resume generation failed: {e}")
-            code = None
+  with st.spinner("Agent creating Resume..."):
+    response = agent.invoke({'messages':[{'role':'user',"content":final_query}]})
+    code = response['messages'][-1].content[-1]['text']
 
-        if code:
-            if save_path is not None:
-                with open(save_path, "rb") as img_file:
-                    b64_image = base64.b64encode(img_file.read()).decode()
-                data_uri = f"data:image/jpeg;base64,{b64_image}"
-                code = code.replace("PROFILE_IMAGE_PLACEHOLDER", data_uri)
+    if FILE is not None: 
+         with open(save_path,"rb") as image_file:
+                  b64_image=base64.b64encode(img_file.read()).decode()
+         data_uri=f"data:image/jpeg;base64,{b64_image}"
+         code=code.replace("PROFIL_IMAGE_PLACEHOLDER",data_uri)
 
-            st.html(code)  # st.html() only accepts the HTML body, no width/js kwargs
-
-    # ------------------------- LIVE JOBS -------------------------
+    st.html(code, width="stretch", unsafe_allow_javascript=True)
+# =================APPLY LIVE JOBS============
     st.divider()
-    with st.spinner("Fetching live job listings..."):
-        try:
-            job_response = agent.invoke({"messages": [{"role": "user", "content": job_prompt}]})
-            job_code = extract_text(job_response["messages"][-1].content)
-            st.html(job_code)
-        except Exception as e:
-            st.error(f"Job search failed: {e}")
+    response = agent.invoke({'messages':[{'role':'user',"content":job_prompt}]})
+    job_code = response['messages'][-1].content[-1]['text']
+    st.html(job_code, width="stretch", unsafe_allow_javascript=True)
