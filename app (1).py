@@ -51,7 +51,7 @@ model1 = ChatGoogleGenerativeAI(
 
 model2 = ChatGroq(
     model = "qwen/qwen3.6-27b",
-    api_key = GROQ_API_KEY
+    groq_api_key = GROQ_API_KEY
 )
 
 
