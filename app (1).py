@@ -18,7 +18,7 @@ st.title ("AI RESUME MAKER & JOB APPLY AGENT")
 st.image("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrGg1PzVvppycJgP2W8V_0eYflg5xcVNxXXYn3OlOGUP6JDnu9O_SZnks&s=10",
         width=300)
 # api keys
-GOOGLE= st.sidebar.text_input("GEMINI",type="password")
+GOOGLE= st.sidebar.text_input("GOOGLE",type="password")
 GROQ= st.sidebar.text_input("GROQ",type="password")
 TAVILY =st.sidebar.text_input("TAVILY",type="password")
 
@@ -118,6 +118,8 @@ DEFAULT IF NOT GIVEN : PYTHON DEVELOPER RESUME"""
 
 query = final_prompt+user_details
 
+
+
 OPTIONS = ["DELHI","NOIDA","GURGAON/GURUGRAM",
           'KANPUR','LUCKNOW','BANGLORE','PUNE']
            
@@ -130,12 +132,14 @@ JOB_PROFILE = ["PYTHON DEVELOPER",'GEN AI',
 PROFILE = st.sidebar.multiselect("SELECT JOB ROLE",
                 options = JOB_PROFILE)
 
+
 job_prompt = f"""Based on {PROFILE} jobs in {LOCATION}, I 
 want latest job news in using tavily, 
 try top 10 search or whatever available
 and give result like naukri theme design with
 job name, job desc, salary,
 apply link and OUTPUT must be In HTML no markdowns"""
+
 
 if st.button('generate resume'):
   with st.spinner("Running Agent"):
