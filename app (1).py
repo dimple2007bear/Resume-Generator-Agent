@@ -1,5 +1,3 @@
-# st.markdown("""## user can create or download resume based on high ats score """)
-#=============================agent code :))=======================================
 import os
 import time
 import langchain
@@ -120,8 +118,6 @@ DEFAULT IF NOT GIVEN : PYTHON DEVELOPER RESUME"""
 
 query = final_prompt+user_details
 
-
-
 OPTIONS = ["DELHI","NOIDA","GURGAON/GURUGRAM",
           'KANPUR','LUCKNOW','BANGLORE','PUNE']
            
@@ -134,17 +130,12 @@ JOB_PROFILE = ["PYTHON DEVELOPER",'GEN AI',
 PROFILE = st.sidebar.multiselect("SELECT JOB ROLE",
                 options = JOB_PROFILE)
 
-
 job_prompt = f"""Based on {PROFILE} jobs in {LOCATION}, I 
 want latest job news in using tavily, 
 try top 10 search or whatever available
 and give result like naukri theme design with
 job name, job desc, salary,
 apply link and OUTPUT must be In HTML no markdowns"""
-
-
-
-
 
 if st.button('generate resume'):
   with st.spinner("Running Agent"):
@@ -165,8 +156,3 @@ if st.button('generate resume'):
     response = agent.invoke({'messages':[{'role':'user','content':job_prompt}]})
     job_code = response['messages'][-1].content[-1]['text']
     st.html(job_code , width="stretch" , unsafe_allow_javascript=True)
-
-  
-
-
-
