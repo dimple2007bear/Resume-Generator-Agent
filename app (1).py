@@ -24,7 +24,7 @@ GOOGLE_API_KEY = st.sidebar.text_input("Google Api Key", type = 'password')
 GROQ_API_KEY = st.sidebar.text_input("GROQ Api Key", type = 'password')
 TAVILY_API_KEY = st.sidebar.text_input("TAVILY Api Key", type = 'password')
 
-if not (GOOGLE_API_KEY) and not(GROQ) and not (TAVILY):
+if not (GOOGLE_API_KEY) and not(GROQ_API_KEY) and not (TAVILY_API_KEY):
   st.sidebar.warning("pass api keys")
   st.stop()
 else:
